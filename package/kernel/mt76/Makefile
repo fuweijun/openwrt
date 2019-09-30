@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2019-02-26
-PKG_SOURCE_VERSION:=fd315bd0f2761b277e09f9142eb0b8f9295f71a0
-PKG_MIRROR_HASH:=ddd45f402a0614f881a21636dfbda1428f5063dfe77f41249a40b62bf95eddca
+PKG_SOURCE_DATE:=2019-09-29
+PKG_SOURCE_VERSION:=6f7d0f503d1013f0909fe52075da5d5d500ddca4
+PKG_MIRROR_HASH:=08da91583d1479f65d3d9921ee5de129c6ec0235d584eb784960a994cd7cbe0f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_BUILD_PARALLEL:=1
@@ -33,7 +33,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
-	+kmod-mac80211 @!LINUX_3_18 \
+	+kmod-mac80211 \
 	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
 endef
 
@@ -138,6 +138,16 @@ define KernelPackage/mt7603
   AUTOLOAD:=$(call AutoProbe,mt7603e)
 endef
 
+define KernelPackage/mt7615e
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7615 wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core
+  FILES:=\
+	$(PKG_BUILD_DIR)/mt7615/mt7615e.ko
+  MODPARAMS:=async_probe
+  AUTOLOAD:=$(call AutoProbe,mt7615e)
+endef
+
 NOSTDINC_FLAGS = \
 	-I$(PKG_BUILD_DIR) \
 	-I$(STAGING_DIR)/usr/include/mac80211-backport/uapi \
@@ -180,6 +190,9 @@ ifdef CONFIG_PACKAGE_kmod-mt76x2u
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7603
   PKG_MAKE_FLAGS += CONFIG_MT7603E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7615e
+  PKG_MAKE_FLAGS += CONFIG_MT7615E=m
 endif
 
 define Build/Compile
@@ -233,6 +246,15 @@ define KernelPackage/mt7603/install
 		$(1)/lib/firmware
 endef
 
+define KernelPackage/mt7615e/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7615_cr4.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7615_n9.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7615_rom_patch.bin \
+		$(1)/lib/firmware/mediatek
+endef
+
 $(eval $(call KernelPackage,mt76-core))
 $(eval $(call KernelPackage,mt76-usb))
 $(eval $(call KernelPackage,mt76x02-usb))
@@ -244,4 +266,5 @@ $(eval $(call KernelPackage,mt76x2-common))
 $(eval $(call KernelPackage,mt76x2u))
 $(eval $(call KernelPackage,mt76x2))
 $(eval $(call KernelPackage,mt7603))
+$(eval $(call KernelPackage,mt7615e))
 $(eval $(call KernelPackage,mt76))
